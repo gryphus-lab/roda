@@ -38,7 +38,7 @@ jobs:
         ports:
           - 1025:1025
       openldap:
-        image: docker.io/vegardit/openldap:2.6
+        image: docker.io/vegardit/openldap:latest
         ports:
           - 1389:1389
           - 1636:1636

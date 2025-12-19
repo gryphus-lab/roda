@@ -44,7 +44,7 @@ services:
       - siegfried_data:/root/siegfried/
       - $HOME/.roda_local/data/storage:$HOME/.roda_local/data/storage
   openldap:
-    image: docker.io/vegardit/openldap:2.6.8
+    image: docker.io/vegardit/openldap:latest
     user: 1001:root
     ports:
       - "1389:1389"
