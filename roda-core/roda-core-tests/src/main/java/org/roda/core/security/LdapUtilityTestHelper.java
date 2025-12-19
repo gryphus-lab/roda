@@ -49,7 +49,7 @@ public class LdapUtilityTestHelper {
     openldap.withEnv("LDAP_ADMIN_PASSWORD", "roda");
     openldap.withEnv("LDAP_EXTRA_SCHEMAS", "cosine,inetorgperson,nis,pbkdf2");
     openldap.withCopyFileToContainer(MountableFile.forClasspathResource("/config/ldap/schema/pbkdf2.ldif"),
-      "/opt/bitnamilegacy/openldap/etc/schema/pbkdf2.ldif");
+      "/opt/bitnami/openldap/etc/schema/pbkdf2.ldif");
     openldap.waitingFor(Wait.forLogMessage(".* Starting slapd .*", 1));
     openldap.start();
 

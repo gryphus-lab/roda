@@ -30,6 +30,7 @@ services:
 
   clamd:
     image: docker.io/clamav/clamav:1.4
+    platform: linux/amd64
     container_name: clamd
     restart: unless-stopped
     ports:
@@ -44,6 +45,7 @@ services:
 
   siegfried:
     image: ghcr.io/keeps/siegfried:v1.11.0
+    platform: linux/amd64
     container_name: siegfried
     restart: unless-stopped
     ports:
@@ -94,7 +96,7 @@ services:
       - LDAP_ADMIN_PASSWORD=roda
       - LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis,pbkdf2
     volumes:
-      - ./ldap/ldif/pbkdf2.ldif:/opt/bitnamilegacy/openldap/etc/schema/pbkdf2.ldif
+      - ./ldap/ldif/pbkdf2.ldif:/opt/bitnami/openldap/etc/schema/pbkdf2.ldif
 
   postgres:
     image: postgres:17

@@ -2,4 +2,4 @@ dn: cn=module{1},cn=config
 objectClass: olcModuleList
 cn: module
 olcModuleLoad: pw-pbkdf2.so
-olcModulePath: /opt/bitnamilegacy/openldap/libexec/openldap
+olcModulePath: /opt/bitnami/openldap/libexec/openldap
