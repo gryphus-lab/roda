@@ -38,7 +38,7 @@ public class LdapUtilityTestHelper {
 
   public LdapUtilityTestHelper() {
     final String ldapBaseDN = "dc=roda,dc=org";
-    DockerImageName OPENLDAP_IMAGE = DockerImageName.parse("docker.io/bitnami/openldap:2.6");
+    DockerImageName OPENLDAP_IMAGE = DockerImageName.parse("docker.io/vegardit/openldap:2.6");
 
     openldap = new GenericContainer<>(OPENLDAP_IMAGE);
     openldap.withExposedPorts(1389);
@@ -49,7 +49,7 @@ public class LdapUtilityTestHelper {
     openldap.withEnv("LDAP_ADMIN_PASSWORD", "roda");
     openldap.withEnv("LDAP_EXTRA_SCHEMAS", "cosine,inetorgperson,nis,pbkdf2");
     openldap.withCopyFileToContainer(MountableFile.forClasspathResource("/config/ldap/schema/pbkdf2.ldif"),
-      "/opt/bitnami/openldap/etc/schema/pbkdf2.ldif");
+      "/opt/vegardit/openldap/etc/schema/pbkdf2.ldif");
     openldap.waitingFor(Wait.forLogMessage(".* Starting slapd .*", 1));
     openldap.start();
 
