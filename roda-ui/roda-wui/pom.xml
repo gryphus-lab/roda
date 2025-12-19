@@ -8,7 +8,6 @@
         <groupId>org.roda-community</groupId>
         <artifactId>roda-ui</artifactId>
         <version>6.1.0-SNAPSHOT</version>
-        <relativePath>..</relativePath>
     </parent>
     <properties>
         <gwt.module.main>org.roda.wui.RodaWUI</gwt.module.main>
@@ -31,6 +30,7 @@
                         <extensions>true</extensions>
                         <configuration>
                             <skipCompilation>false</skipCompilation>
+                            <moduleName/>
                         </configuration>
                         <executions>
                             <execution>

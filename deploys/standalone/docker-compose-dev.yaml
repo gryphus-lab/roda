@@ -30,6 +30,7 @@ services:
 
   clamd:
     image: docker.io/clamav/clamav:1.4
+    platform: linux/amd64
     container_name: clamd
     restart: unless-stopped
     ports:
@@ -44,6 +45,7 @@ services:
 
   siegfried:
     image: ghcr.io/keeps/siegfried:v1.11.0
+    platform: linux/amd64
     container_name: siegfried
     restart: unless-stopped
     ports:
@@ -79,7 +81,7 @@ services:
       - "8025:8025" # web ui
 
   openldap:
-    image: docker.io/bitnami/openldap:2.6
+    image: docker.io/bitnamilegacy/openldap:latest
     container_name: openldap
     restart: unless-stopped
     user: 1001:root

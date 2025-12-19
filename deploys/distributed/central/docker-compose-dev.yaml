@@ -44,7 +44,7 @@ services:
       - siegfried_data:/root/siegfried/
       - $HOME/.roda_central/data/storage:$HOME/.roda_central/data/storage
   openldap:
-    image: docker.io/bitnami/openldap:2.6.8
+    image: docker.io/bitnamilegacy/openldap:latest
     user: 1001:root
     ports:
       - "1388:1389"
@@ -57,7 +57,7 @@ services:
       - LDAP_ADMIN_PASSWORD=roda
       - LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis,pbkdf2
     volumes:
-      - ldap_data:/opt/bitnami/openldap/etc/schema/pbkdf2.ldif
+      - ldap_data:/opt/bitnamilegacy/openldap/etc/schema/pbkdf2.ldif
 volumes:
   zookeeper_data:
   zookeeper_datalog:

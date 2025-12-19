@@ -23,6 +23,7 @@ services:
 
   clamd:
     image: docker.io/clamav/clamav:1.4
+    platform: linux/amd64
     restart: unless-stopped
     volumes:
       - clam_data:/var/lib/clamav
@@ -30,6 +31,7 @@ services:
 
   siegfried:
     image: ghcr.io/keeps/siegfried:v1.11.0
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       SIEGFRIED_HOST: 0.0.0.0
@@ -56,7 +58,7 @@ services:
       - "8025:8025" # web ui
 
   openldap:
-    image: docker.io/bitnami/openldap:2.6
+    image: docker.io/bitnamilegacy/openldap:latest
     restart: unless-stopped
     user: 1001:root
     ports:
@@ -74,6 +76,7 @@ services:
 
   roda:
     image: docker.io/keeps/roda:development
+    platform: linux/amd64
     restart: unless-stopped
     ports:
       - "8080:8080"
