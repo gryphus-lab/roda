@@ -79,7 +79,7 @@ services:
       - "8025:8025" # web ui
 
   openldap:
-    image: docker.io/vegardit/openldap:latest
+    image: docker.io/bitnamilegacy/openldap:latest
     container_name: openldap
     restart: unless-stopped
     user: 1001:root
@@ -94,7 +94,7 @@ services:
       - LDAP_ADMIN_PASSWORD=roda
       - LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis,pbkdf2
     volumes:
-      - ./ldap/ldif/pbkdf2.ldif:/opt/vegardit/openldap/etc/schema/pbkdf2.ldif
+      - ./ldap/ldif/pbkdf2.ldif:/opt/bitnamilegacy/openldap/etc/schema/pbkdf2.ldif
 
   postgres:
     image: postgres:17
