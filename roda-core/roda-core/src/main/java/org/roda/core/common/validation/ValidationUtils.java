@@ -272,6 +272,15 @@ public class ValidationUtils {
           new BOMInputStream(descriptiveMetadataPayload.createInputStream()))) {
 
           XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+          try {
+            // Disable DTDs and external entities to prevent XXE
+            xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            xmlReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            xmlReader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+          } catch (SAXException featureException) {
+            // Log and continue if the underlying parser does not support these features
+            LOGGER.warn("Could not set secure XML parser features when validating descriptive metadata", featureException);
+          }
           xmlReader.setEntityResolver(new RodaEntityResolver());
           InputSource inputSource = new InputSource(inputStreamReader);
           Source source = new SAXSource(xmlReader, inputSource);
