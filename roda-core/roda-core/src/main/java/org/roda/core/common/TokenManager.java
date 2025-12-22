@@ -72,26 +72,31 @@ public class TokenManager {
           httpPost.addHeader("Authorization", "Bearer " + localInstance.getAccessKey());
           httpPost.addHeader("content-type", "application/json");
 
-          try {
-              httpPost.setEntity(new StringEntity(localInstance.getAccessKey()));
-              HttpResponse response = httpClient.execute(httpPost);
-              HttpEntity responseEntity = response.getEntity();
-              int responseStatusCode = response.getStatusLine().getStatusCode();
-
-              return switch (responseStatusCode) {
-                  case 200 -> JsonUtils.getObjectFromJson(responseEntity.getContent(), AccessToken.class);
-                  case 401 -> throw new AuthenticationDeniedException("Cannot authenticate on central instance with current configuration");
-                  default -> throw new GenericException("url: " + url + ", response code; " + responseStatusCode);
-              };
-          } catch (IOException e) {
-              throw new GenericException("Error sending POST request", e);
-          }
+          return getAccessToken(localInstance, httpPost, httpClient, url);
       } catch (IOException e) {
           throw new GenericException("Error sending POST request", e);
       }
   }
 
-  private void setExpirationTime() {
+    private static AccessToken getAccessToken(LocalInstance localInstance, HttpPost httpPost, CloseableHttpClient httpClient, String url) throws GenericException, AuthenticationDeniedException {
+        try {
+            httpPost.setEntity(new StringEntity(localInstance.getAccessKey()));
+            HttpResponse response = httpClient.execute(httpPost);
+            HttpEntity responseEntity = response.getEntity();
+            int responseStatusCode = response.getStatusLine().getStatusCode();
+
+            return switch (responseStatusCode) {
+                case 200 -> JsonUtils.getObjectFromJson(responseEntity.getContent(), AccessToken.class);
+                case 401 ->
+                        throw new AuthenticationDeniedException("Cannot authenticate on central instance with current configuration");
+                default -> throw new GenericException("url: " + url + ", response code; " + responseStatusCode);
+            };
+        } catch (IOException e) {
+            throw new GenericException("Error sending POST request", e);
+        }
+    }
+
+    private void setExpirationTime() {
     long today = new Date().getTime();
     expirationTime = new Date(today + currentToken.getExpiresIn());
   }
