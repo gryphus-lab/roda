@@ -15,10 +15,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URL;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -232,11 +229,11 @@ public class RodaCoreFactory {
     .build(RODA_SCHEMAS_LOADER);
 
   private static LoadingCache<String, DisposalSchedule> DISPOSAL_SCHEDULE_CACHE = CacheBuilder.newBuilder()
-    .build(new CacheLoader<String, DisposalSchedule>() {
-      @Override
-      public DisposalSchedule load(String disposalScheduleId) throws Exception {
-        return model.retrieveDisposalSchedule(disposalScheduleId);
-      }
+    .build(new CacheLoader<>() {
+        @Override
+        public DisposalSchedule load(String disposalScheduleId) throws Exception {
+            return model.retrieveDisposalSchedule(disposalScheduleId);
+        }
     });
   private static LoadingCache<String, DisposalHold> DISPOSAL_HOLD_CACHE = CacheBuilder.newBuilder()
     .expireAfterWrite(10, TimeUnit.MINUTES).build(new CacheLoader<String, DisposalHold>() {
@@ -904,8 +901,7 @@ public class RodaCoreFactory {
       LOGGER.debug("Going to instantiate Filesystem on '{}'", configurationManager.getStoragePath());
       String trashDirName = getRodaConfiguration().getString("core.storage.filesystem.trash",
         RodaConstants.TRASH_CONTAINER);
-      StorageService fileStorageService = new FileStorageService(configurationManager.getStoragePath(), trashDirName);
-      return fileStorageService;
+      return new FileStorageService(configurationManager.getStoragePath(), trashDirName);
     } else {
       LOGGER.error("Unknown storage service '{}'", storageType.name());
       throw new GenericException();
@@ -1161,8 +1157,8 @@ public class RodaCoreFactory {
       Set<String> unhealthyCollections = new HashSet<>(allCollections);
       unhealthyCollections.removeAll(healthyCollections);
 
-      LOGGER.info("Solr Cloud healthy collections:   " + healthyCollections);
-      LOGGER.info("Solr Cloud unhealthy collections: " + unhealthyCollections);
+      LOGGER.info("Solr Cloud healthy collections:   {}", healthyCollections);
+      LOGGER.info("Solr Cloud unhealthy collections: {}", unhealthyCollections);
     }
 
     return healthy;
@@ -1298,13 +1294,12 @@ public class RodaCoreFactory {
           rodaCentralInstance.setIsSubscribed(true);
           createOrUpdateLocalInstance(rodaCentralInstance);
         }
-      } else if (DistributedModeType.BASE.equals(distributedModeType)) {
-        if (getLocalInstance() == null) {
+      } else if (DistributedModeType.BASE.equals(distributedModeType) && getLocalInstance() == null) {
           final LocalInstance rodaBaseInstance = new LocalInstance();
           rodaBaseInstance.setId(IdUtils.createUUID());
           createOrUpdateLocalInstance(rodaBaseInstance);
         }
-      }
+
     } catch (final GenericException e) {
       LOGGER.error("Can't initialize distributed mode", e);
       instantiatedWithoutErrors = false;
@@ -1392,7 +1387,7 @@ public class RodaCoreFactory {
       }
 
       // delete resources that are no longer needed
-      toDeleteDuringShutdown.forEach(e -> FSUtils.deletePathQuietly(e));
+      toDeleteDuringShutdown.forEach(FSUtils::deletePathQuietly);
     }
   }
 
@@ -1846,12 +1841,9 @@ public class RodaCoreFactory {
         || address.isSiteLocalAddress()) {
         throw new GenericException("Central instance URL host is not allowed");
       }
-    } catch (UnknownHostException e) {
+    } catch (UnknownHostException | URISyntaxException e) {
       throw new GenericException("Cannot resolve central instance URL host", e);
-    } catch (Exception e) {
-      if (e instanceof GenericException) {
-        throw (GenericException) e;
-      }
+    } catch (GenericException e) {
       throw new GenericException("Invalid central instance URL", e);
     }
   }
@@ -1866,15 +1858,14 @@ public class RodaCoreFactory {
 
   public static void runReindex(List<String> args) {
     String entity = args.get(2);
-    if (StringUtils.isNotBlank(entity)) {
-      if ("users_and_groups".equalsIgnoreCase(entity)) {
+    if (StringUtils.isNotBlank(entity) && "users_and_groups".equalsIgnoreCase(entity)) {
         try {
           indexUsersAndGroupsFromLDAP();
         } catch (GenericException e) {
           LOGGER.error("Unable to reindex users & groups from LDAP.", e);
         }
       }
-    }
+
   }
 
   private static void runSolrQuery(List<String> args) {
@@ -2150,23 +2141,24 @@ public class RodaCoreFactory {
 
     preInstantiateSteps(args);
     instantiate();
-    if (nodeType == NodeType.PRIMARY) {
-      if (!args.isEmpty()) {
-        mainMasterTasks(args);
-      } else {
-        printMainUsage();
+      switch (nodeType) {
+          case PRIMARY -> {
+              if (!args.isEmpty()) {
+                  mainMasterTasks(args);
+              } else {
+                  printMainUsage();
+              }
+          }
+          case WORKER -> Thread.currentThread().join();
+          case CONFIGS -> {
+              if (!args.isEmpty()) {
+                  mainConfigsTasks(args);
+              } else {
+                  printConfigsUsage();
+              }
+          }
+          default -> printMainUsage();
       }
-    } else if (nodeType == NodeType.WORKER) {
-      Thread.currentThread().join();
-    } else if (nodeType == NodeType.CONFIGS) {
-      if (!args.isEmpty()) {
-        mainConfigsTasks(args);
-      } else {
-        printConfigsUsage();
-      }
-    } else {
-      printMainUsage();
-    }
 
     System.exit(0);
   }
