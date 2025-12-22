@@ -8,6 +8,10 @@
 package org.roda.core.common;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Date;
 
 import org.apache.http.HttpEntity;
@@ -61,8 +65,11 @@ public class TokenManager {
   }
 
   public AccessToken grantToken(LocalInstance localInstance) throws GenericException, AuthenticationDeniedException {
+    String centralInstanceUrl = localInstance.getCentralInstanceURL();
+    validateCentralInstanceUrl(centralInstanceUrl);
+
     CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-    String url = localInstance.getCentralInstanceURL() + RodaConstants.API_SEP + RodaConstants.API_REST_V2_MEMBERS
+    String url = centralInstanceUrl + RodaConstants.API_SEP + RodaConstants.API_REST_V2_MEMBERS
       + RodaConstants.API_PATH_PARAM_AUTH_TOKEN;
     HttpPost httpPost = new HttpPost(url);
     httpPost.addHeader("Authorization", "Bearer " + localInstance.getAccessKey());
@@ -97,5 +104,31 @@ public class TokenManager {
 
   public void removeToken() {
     this.currentToken = null;
+
+  private void validateCentralInstanceUrl(String url) throws GenericException {
+    try {
+      if (url == null || url.isEmpty()) {
+        throw new GenericException("Central instance URL must not be empty");
+      }
+      URI uri = new URI(url);
+      String scheme = uri.getScheme();
+      if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+        throw new GenericException("Central instance URL must use http or https scheme");
+      }
+      String host = uri.getHost();
+      if (host == null || host.isEmpty()) {
+        throw new GenericException("Central instance URL must contain a host");
+      }
+      InetAddress address = InetAddress.getByName(host);
+      if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress()
+        || address.isSiteLocalAddress()) {
+        throw new GenericException("Central instance URL host is not allowed");
+      }
+    } catch (UnknownHostException e) {
+      throw new GenericException("Cannot resolve central instance URL host", e);
+    } catch (URISyntaxException e) {
+      throw new GenericException("Invalid central instance URL", e);
+    }
+  }
   }
 }
