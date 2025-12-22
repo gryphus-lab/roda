@@ -24,6 +24,8 @@ import org.roda.core.data.utils.JsonUtils;
 import org.roda.core.data.v2.accessToken.AccessToken;
 import org.roda.core.data.v2.synchronization.local.LocalInstance;
 
+import static org.roda.core.RodaCoreFactory.validateCentralInstanceUrl;
+
 /**
  * @author Gabriel Barros <gbarros@keep.pt>
  */
@@ -46,11 +48,10 @@ public class TokenManager {
   public AccessToken getAccessToken(LocalInstance localInstance)
     throws AuthenticationDeniedException, GenericException {
     try {
-      if (currentToken != null) {
-        if (!tokenExpired()) {
+      if (currentToken != null && !tokenExpired()) {
           return currentToken;
         }
-      }
+
       currentToken = grantToken(localInstance);
       setExpirationTime();
       return currentToken;
@@ -61,29 +62,33 @@ public class TokenManager {
   }
 
   public AccessToken grantToken(LocalInstance localInstance) throws GenericException, AuthenticationDeniedException {
-    CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-    String url = localInstance.getCentralInstanceURL() + RodaConstants.API_SEP + RodaConstants.API_REST_V2_MEMBERS
-      + RodaConstants.API_PATH_PARAM_AUTH_TOKEN;
-    HttpPost httpPost = new HttpPost(url);
-    httpPost.addHeader("Authorization", "Bearer " + localInstance.getAccessKey());
-    httpPost.addHeader("content-type", "application/json");
+    String centralInstanceUrl = localInstance.getCentralInstanceURL();
+    validateCentralInstanceUrl(centralInstanceUrl);
 
-    try {
-      httpPost.setEntity(new StringEntity(localInstance.getAccessKey()));
-      HttpResponse response = httpClient.execute(httpPost);
-      HttpEntity responseEntity = response.getEntity();
-      int responseStatusCode = response.getStatusLine().getStatusCode();
+      try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          String url = centralInstanceUrl + RodaConstants.API_SEP + RodaConstants.API_REST_V2_MEMBERS
+                  + RodaConstants.API_PATH_PARAM_AUTH_TOKEN;
+          HttpPost httpPost = new HttpPost(url);
+          httpPost.addHeader("Authorization", "Bearer " + localInstance.getAccessKey());
+          httpPost.addHeader("content-type", "application/json");
 
-      if (responseStatusCode == 200) {
-        return JsonUtils.getObjectFromJson(responseEntity.getContent(), AccessToken.class);
-      } else if (responseStatusCode == 401) {
-        throw new AuthenticationDeniedException("Cannot authenticate on central instance with current configuration");
-      } else {
-        throw new GenericException("url: " + url + ", response code; " + responseStatusCode);
+          try {
+              httpPost.setEntity(new StringEntity(localInstance.getAccessKey()));
+              HttpResponse response = httpClient.execute(httpPost);
+              HttpEntity responseEntity = response.getEntity();
+              int responseStatusCode = response.getStatusLine().getStatusCode();
+
+              return switch (responseStatusCode) {
+                  case 200 -> JsonUtils.getObjectFromJson(responseEntity.getContent(), AccessToken.class);
+                  case 401 -> throw new AuthenticationDeniedException("Cannot authenticate on central instance with current configuration");
+                  default -> throw new GenericException("url: " + url + ", response code; " + responseStatusCode);
+              };
+          } catch (IOException e) {
+              throw new GenericException("Error sending POST request", e);
+          }
+      } catch (IOException e) {
+          throw new GenericException("Error sending POST request", e);
       }
-    } catch (IOException e) {
-      throw new GenericException("Error sending POST request", e);
-    }
   }
 
   private void setExpirationTime() {
