@@ -268,28 +268,7 @@ public class ValidationUtils {
       if (xmlSchema.isPresent()) {
         RodaErrorHandler errorHandler = new RodaErrorHandler();
 
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-          new BOMInputStream(descriptiveMetadataPayload.createInputStream()))) {
-
-          XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-          xmlReader.setEntityResolver(new RodaEntityResolver());
-          InputSource inputSource = new InputSource(inputStreamReader);
-          Source source = new SAXSource(xmlReader, inputSource);
-
-          Validator validator = xmlSchema.get().newValidator();
-          validator.setErrorHandler(errorHandler);
-          validator.validate(source);
-          ret.setValid(errorHandler.getErrors().isEmpty());
-          for (SAXParseException saxParseException : errorHandler.getErrors()) {
-            ret.addIssue(convertSAXParseException(saxParseException));
-          }
-        } catch (SAXException e) {
-          LOGGER.debug("Error validating descriptive binary " + descriptiveMetadataType, e);
-          ret.setValid(false);
-          for (SAXParseException saxParseException : errorHandler.getErrors()) {
-            ret.addIssue(convertSAXParseException(saxParseException));
-          }
-        }
+        validatePayload(descriptiveMetadataPayload, descriptiveMetadataType, xmlSchema, errorHandler, ret);
       } else {
         if (failIfNoSchema) {
           LOGGER.error(
@@ -312,6 +291,44 @@ public class ValidationUtils {
 
   }
 
+  private static void validatePayload(ContentPayload descriptiveMetadataPayload, String descriptiveMetadataType, Optional<Schema> xmlSchema, RodaErrorHandler errorHandler, ValidationReport ret) throws IOException {
+    try (InputStreamReader inputStreamReader = new InputStreamReader(
+      new BOMInputStream(descriptiveMetadataPayload.createInputStream()))) {
+
+      XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+      setFeatures(xmlReader);
+      xmlReader.setEntityResolver(new RodaEntityResolver());
+      InputSource inputSource = new InputSource(inputStreamReader);
+      Source source = new SAXSource(xmlReader, inputSource);
+
+      Validator validator = xmlSchema.get().newValidator();
+      validator.setErrorHandler(errorHandler);
+      validator.validate(source);
+      ret.setValid(errorHandler.getErrors().isEmpty());
+      for (SAXParseException saxParseException : errorHandler.getErrors()) {
+        ret.addIssue(convertSAXParseException(saxParseException));
+      }
+    } catch (SAXException e) {
+      LOGGER.debug("Error validating descriptive binary " + descriptiveMetadataType, e);
+      ret.setValid(false);
+      for (SAXParseException saxParseException : errorHandler.getErrors()) {
+        ret.addIssue(convertSAXParseException(saxParseException));
+      }
+    }
+  }
+
+  private static void setFeatures(XMLReader xmlReader) {
+    try {
+      // Disable DTDs and external entities to prevent XXE
+      xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      xmlReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      xmlReader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    } catch (SAXException featureException) {
+      // Log and continue if the underlying parser does not support these features
+      LOGGER.warn("Could not set secure XML parser features when validating descriptive metadata", featureException);
+    }
+  }
+
   /**
    * Validates preservation medatada (e.g. against its schema, but other
    * strategies may be used)
@@ -329,19 +346,7 @@ public class ValidationUtils {
         Validator validator = xmlSchema.get().newValidator();
         RodaErrorHandler errorHandler = new RodaErrorHandler();
         validator.setErrorHandler(errorHandler);
-        try {
-          validator.validate(xmlFile);
-          report.setValid(errorHandler.getErrors().isEmpty());
-          for (SAXParseException saxParseException : errorHandler.getErrors()) {
-            report.addIssue(convertSAXParseException(saxParseException));
-          }
-        } catch (SAXException e) {
-          LOGGER.error("Error validating preservation binary " + binary.getStoragePath(), e);
-          report.setValid(false);
-          for (SAXParseException saxParseException : errorHandler.getErrors()) {
-            report.addIssue(convertSAXParseException(saxParseException));
-          }
-        }
+        validateXmlFile(binary, validator, xmlFile, report, errorHandler);
       } catch (IOException e) {
         report.setValid(false);
         report.setMessage(e.getMessage());
@@ -352,6 +357,22 @@ public class ValidationUtils {
     }
 
     return report;
+  }
+
+  private static void validateXmlFile(Binary binary, Validator validator, Source xmlFile, ValidationReport report, RodaErrorHandler errorHandler) throws IOException {
+    try {
+      validator.validate(xmlFile);
+      report.setValid(errorHandler.getErrors().isEmpty());
+      for (SAXParseException saxParseException : errorHandler.getErrors()) {
+        report.addIssue(convertSAXParseException(saxParseException));
+      }
+    } catch (SAXException e) {
+      LOGGER.error("Error validating preservation binary " + binary.getStoragePath(), e);
+      report.setValid(false);
+      for (SAXParseException saxParseException : errorHandler.getErrors()) {
+        report.addIssue(convertSAXParseException(saxParseException));
+      }
+    }
   }
 
   private static class RodaErrorHandler extends DefaultHandler {
