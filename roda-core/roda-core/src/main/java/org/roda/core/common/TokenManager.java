@@ -50,11 +50,10 @@ public class TokenManager {
   public AccessToken getAccessToken(LocalInstance localInstance)
     throws AuthenticationDeniedException, GenericException {
     try {
-      if (currentToken != null) {
-        if (!tokenExpired()) {
+      if (currentToken != null && !tokenExpired()) {
           return currentToken;
         }
-      }
+
       currentToken = grantToken(localInstance);
       setExpirationTime();
       return currentToken;
@@ -68,29 +67,30 @@ public class TokenManager {
     String centralInstanceUrl = localInstance.getCentralInstanceURL();
     validateCentralInstanceUrl(centralInstanceUrl);
 
-    CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-    String url = centralInstanceUrl + RodaConstants.API_SEP + RodaConstants.API_REST_V2_MEMBERS
-      + RodaConstants.API_PATH_PARAM_AUTH_TOKEN;
-    HttpPost httpPost = new HttpPost(url);
-    httpPost.addHeader("Authorization", "Bearer " + localInstance.getAccessKey());
-    httpPost.addHeader("content-type", "application/json");
+      try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          String url = centralInstanceUrl + RodaConstants.API_SEP + RodaConstants.API_REST_V2_MEMBERS
+                  + RodaConstants.API_PATH_PARAM_AUTH_TOKEN;
+          HttpPost httpPost = new HttpPost(url);
+          httpPost.addHeader("Authorization", "Bearer " + localInstance.getAccessKey());
+          httpPost.addHeader("content-type", "application/json");
 
-    try {
-      httpPost.setEntity(new StringEntity(localInstance.getAccessKey()));
-      HttpResponse response = httpClient.execute(httpPost);
-      HttpEntity responseEntity = response.getEntity();
-      int responseStatusCode = response.getStatusLine().getStatusCode();
+          try {
+              httpPost.setEntity(new StringEntity(localInstance.getAccessKey()));
+              HttpResponse response = httpClient.execute(httpPost);
+              HttpEntity responseEntity = response.getEntity();
+              int responseStatusCode = response.getStatusLine().getStatusCode();
 
-      if (responseStatusCode == 200) {
-        return JsonUtils.getObjectFromJson(responseEntity.getContent(), AccessToken.class);
-      } else if (responseStatusCode == 401) {
-        throw new AuthenticationDeniedException("Cannot authenticate on central instance with current configuration");
-      } else {
-        throw new GenericException("url: " + url + ", response code; " + responseStatusCode);
+              return switch (responseStatusCode) {
+                  case 200 -> JsonUtils.getObjectFromJson(responseEntity.getContent(), AccessToken.class);
+                  case 401 -> throw new AuthenticationDeniedException("Cannot authenticate on central instance with current configuration");
+                  default -> throw new GenericException("url: " + url + ", response code; " + responseStatusCode);
+              };
+          } catch (IOException e) {
+              throw new GenericException("Error sending POST request", e);
+          }
+      } catch (IOException e) {
+          throw new GenericException("Error sending POST request", e);
       }
-    } catch (IOException e) {
-      throw new GenericException("Error sending POST request", e);
-    }
   }
 
   private void setExpirationTime() {
@@ -104,6 +104,7 @@ public class TokenManager {
 
   public void removeToken() {
     this.currentToken = null;
+  }
 
   private void validateCentralInstanceUrl(String url) throws GenericException {
     try {
@@ -129,6 +130,5 @@ public class TokenManager {
     } catch (URISyntaxException e) {
       throw new GenericException("Invalid central instance URL", e);
     }
-  }
   }
 }
