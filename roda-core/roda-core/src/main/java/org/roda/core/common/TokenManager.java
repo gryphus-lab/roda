@@ -8,10 +8,6 @@
 package org.roda.core.common;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Date;
 
 import org.apache.http.HttpEntity;
@@ -27,6 +23,8 @@ import org.roda.core.data.exceptions.RODAException;
 import org.roda.core.data.utils.JsonUtils;
 import org.roda.core.data.v2.accessToken.AccessToken;
 import org.roda.core.data.v2.synchronization.local.LocalInstance;
+
+import static org.roda.core.RodaCoreFactory.validateCentralInstanceUrl;
 
 /**
  * @author Gabriel Barros <gbarros@keep.pt>
@@ -104,31 +102,5 @@ public class TokenManager {
 
   public void removeToken() {
     this.currentToken = null;
-  }
-
-  private void validateCentralInstanceUrl(String url) throws GenericException {
-    try {
-      if (url == null || url.isEmpty()) {
-        throw new GenericException("Central instance URL must not be empty");
-      }
-      URI uri = new URI(url);
-      String scheme = uri.getScheme();
-      if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
-        throw new GenericException("Central instance URL must use http or https scheme");
-      }
-      String host = uri.getHost();
-      if (host == null || host.isEmpty()) {
-        throw new GenericException("Central instance URL must contain a host");
-      }
-      InetAddress address = InetAddress.getByName(host);
-      if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress()
-        || address.isSiteLocalAddress()) {
-        throw new GenericException("Central instance URL host is not allowed");
-      }
-    } catch (UnknownHostException e) {
-      throw new GenericException("Cannot resolve central instance URL host", e);
-    } catch (URISyntaxException e) {
-      throw new GenericException("Invalid central instance URL", e);
-    }
   }
 }

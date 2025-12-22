@@ -1827,7 +1827,7 @@ public class RodaCoreFactory {
     localInstance = newLocalInstance;
   }
 
-  private static void validateCentralInstanceUrl(String url) throws GenericException {
+  public static void validateCentralInstanceUrl(String url) throws GenericException {
     try {
       if (url == null || url.isEmpty()) {
         throw new GenericException("Central instance URL must not be empty");
