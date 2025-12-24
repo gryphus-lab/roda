@@ -117,9 +117,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <roda.temporary.repository>${user.dir}</roda.temporary.repository>
-        <java_version>21</java_version>
+        <java_version>25</java_version>
         <gwt.version>2.12.2</gwt.version>
         <cas.client.version>4.0.4</cas.client.version>
         <swagger.version>2.2.41</swagger.version>
