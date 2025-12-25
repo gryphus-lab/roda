@@ -136,6 +136,7 @@
         <scope.gwt-dev>provided</scope.gwt-dev>
         <logback.version>1.5.19</logback.version>
         <byte-buddy.version>1.17.8</byte-buddy.version>
+        <jetty.version>12.0.12</jetty.version>
     </properties>
     <profiles>
         <profile>
@@ -452,22 +453,22 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
-                <version>10.0.19</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-http</artifactId>
-                <version>10.0.19</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
-                <version>10.0.19</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-io</artifactId>
-                <version>10.0.19</version>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
