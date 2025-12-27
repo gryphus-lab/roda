@@ -374,6 +374,9 @@ public class SyncUtils {
       String resource = RodaConstants.API_SEP + "api/v2/distributed-instances/" + distributedInstance.getId()
         + "/status?activate=false";
 
+      // Validate central instance URL before issuing HTTP request to avoid SSRF
+      RodaCoreFactory.validateCentralInstanceUrl(localInstance.getCentralInstanceURL());
+
       CloseableHttpClient httpClient = HttpClientBuilder.create().build();
       HttpPatch httpPatch = new HttpPatch(localInstance.getCentralInstanceURL() + resource);
       // httpPatch.setEntity(new
@@ -398,6 +401,9 @@ public class SyncUtils {
       AccessToken accessToken = TokenManager.getInstance().getAccessToken(localInstance);
       String resource = RodaConstants.API_SEP + RodaConstants.API_REST_V2_DISTRIBUTED_INSTANCE
         + RodaConstants.API_PATH_PARAM_DISTRIBUTED_INSTANCE_GET_UPDATES + RodaConstants.API_SEP + localInstance.getId();
+
+      // Validate central instance URL before issuing HTTP request to avoid SSRF
+      RodaCoreFactory.validateCentralInstanceUrl(localInstance.getCentralInstanceURL());
 
       CloseableHttpClient httpClient = HttpClientBuilder.create().build();
       HttpGet httpGet = new HttpGet(localInstance.getCentralInstanceURL() + resource);
