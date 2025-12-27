@@ -28,6 +28,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.roda.core.RodaCoreFactory;
 import org.roda.core.data.common.RodaConstants;
 import org.roda.core.data.common.SecureString;
 import org.roda.core.data.exceptions.GenericException;
@@ -51,6 +52,8 @@ public final class RESTClientUtility {
   public static <T extends Serializable> T sendPostRequestWithoutBodyHttp5(Class<T> elementClass, String url,
     String resource, AccessToken accessToken) throws GenericException {
     try (final CloseableHttpClient httpclient = HttpClients.createDefault()) {
+      // Validate base URL to prevent SSRF
+      RodaCoreFactory.validateCentralInstanceUrl(url);
       HttpPost httpPost = new HttpPost(url + resource);
       httpPost.addHeader("Authorization", "Bearer " + accessToken.getToken());
       httpPost.addHeader("content-type", "application/json");
@@ -76,6 +79,8 @@ public final class RESTClientUtility {
   public static <T extends Serializable> T sendPostRequestHttpClient5(Object element, Class<T> elementClass, String url,
     String resource, AccessToken accessToken) throws GenericException {
     try (final CloseableHttpClient httpclient = HttpClients.createDefault()) {
+      // Validate base URL to prevent SSRF
+      RodaCoreFactory.validateCentralInstanceUrl(url);
       HttpPost httpPost = new HttpPost(url + resource);
       httpPost.addHeader("Authorization", "Bearer " + accessToken.getToken());
       httpPost.addHeader("content-type", "application/json");
@@ -124,6 +129,12 @@ public final class RESTClientUtility {
   public static int sendPostRequestWithFileHttp5(String url, String resource, String username, SecureString password,
     Path file) throws RODAException {
     try (final CloseableHttpClient httpclient = HttpClients.createDefault()) {
+      try {
+        // Validate base URL to prevent SSRF
+        RodaCoreFactory.validateCentralInstanceUrl(url);
+      } catch (GenericException e) {
+        throw new RODAException("Invalid target URL for POST request", e);
+      }
       HttpPost httpPost = new HttpPost(url + resource);
       try (
         SecureString basicAuth = new SecureString(
