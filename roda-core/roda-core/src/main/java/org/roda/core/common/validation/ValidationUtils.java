@@ -149,6 +149,27 @@ public class ValidationUtils {
 
     try (Reader reader = new InputStreamReader(new BOMInputStream(xmlPayload.createInputStream()))) {
       XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+      // Harden parser against XXE: disable DTDs and external entities
+      try {
+        xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      } catch (SAXException e) {
+        LOGGER.warn("Could not set disallow-doctype-decl feature on XMLReader", e);
+      }
+      try {
+        xmlReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      } catch (SAXException e) {
+        LOGGER.warn("Could not disable external-general-entities on XMLReader", e);
+      }
+      try {
+        xmlReader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+      } catch (SAXException e) {
+        LOGGER.warn("Could not disable external-parameter-entities on XMLReader", e);
+      }
+      try {
+        xmlReader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+      } catch (SAXException e) {
+        LOGGER.warn("Could not disable load-external-dtd on XMLReader", e);
+      }
       xmlReader.setEntityResolver(new RodaEntityResolver());
       InputSource inputSource = new InputSource(reader);
 
