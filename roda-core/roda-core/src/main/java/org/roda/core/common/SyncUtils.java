@@ -246,6 +246,8 @@ public class SyncUtils {
   public static DistributedInstance requestInstanceStatus(LocalInstance localInstance) throws GenericException {
     try {
       AccessToken accessToken = TokenManager.getInstance().getAccessToken(localInstance);
+      // Validate the central instance URL to prevent SSRF
+      RodaCoreFactory.validateCentralInstanceUrl(localInstance.getCentralInstanceURL());
       String resource = RodaConstants.API_SEP + RodaConstants.API_REST_V2_DISTRIBUTED_INSTANCE + RodaConstants.API_SEP
         + localInstance.getId();
 
@@ -272,6 +274,8 @@ public class SyncUtils {
   public static Path requestRemoteActions(LocalInstance localInstance) throws GenericException {
     try {
       AccessToken accessToken = TokenManager.getInstance().getAccessToken(localInstance);
+      // Validate the central instance URL to prevent SSRF
+      RodaCoreFactory.validateCentralInstanceUrl(localInstance.getCentralInstanceURL());
       String resource = RodaConstants.API_SEP + RodaConstants.API_REST_V2_DISTRIBUTED_INSTANCE + "remote/actions"
         + RodaConstants.API_SEP + localInstance.getId();
 
